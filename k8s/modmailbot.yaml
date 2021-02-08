@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bot-config
+  namespace: modmail
+data:
+  MM_MAIN_SERVER_ID: "707266653989371956"
+  MM_INBOX_SERVER_ID: "707266653989371956"
+  MM_LOG_CHANNEL_ID: "738148189240295456"
+  MM_CATEGORY_AUTOMATION__NEW_THREAD: "738147648678395934"
+  MM_ATTACHMENT_STORAGE: "discord"
+  MM_ATTACHMENT_STORAGE_CHANNEL_ID: "808444362999595058"
+  MM_URL: "https://modmail.ricing.net"
+  MM_PREFIX: "."
+  MM_SQLITE_OPTIONS__FILENAME: "/var/lib/modmailbot/data.sqlite"
+  MM_LOG_OPTIONS__ATTACHMENT_DIRECTORY: "/var/lib/modmailbot/logs"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bot-pv-claim
+  namespace: modmail
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bot
+  namespace: modmail
+  labels:
+    app: bot
+spec:
+  serviceName: bot
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bot
+  template:
+    metadata:
+      labels:
+        app: bot
+    spec:
+      containers:
+        - name: bot
+          image: mlvzk/modmailbot
+          ports:
+            - containerPort: 8890
+              name: web
+          volumeMounts:
+            - name: bot-volume
+              mountPath: /var/lib/modmailbot
+          envFrom:
+            - configMapRef:
+                name: bot-config
+            - secretRef:
+                name: discord-creds
+      volumes:
+        - name: bot-volume
+          persistentVolumeClaim:
+            claimName: bot-pv-claim
