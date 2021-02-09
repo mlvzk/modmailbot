@@ -4,16 +4,18 @@ metadata:
   name: bot-config
   namespace: modmail
 data:
-  MM_MAIN_SERVER_ID: "707266653989371956"
-  MM_INBOX_SERVER_ID: "707266653989371956"
-  MM_LOG_CHANNEL_ID: "738148189240295456"
-  MM_CATEGORY_AUTOMATION__NEW_THREAD: "738147648678395934"
+  MM_MAIN_SERVER_ID: "635612648934735892"
+  MM_INBOX_SERVER_ID: "635612648934735892"
+  MM_CATEGORY_AUTOMATION__NEW_THREAD: "738143434585407509"
+  MM_LOG_CHANNEL_ID: "738145193651339365"
   MM_ATTACHMENT_STORAGE: "discord"
-  MM_ATTACHMENT_STORAGE_CHANNEL_ID: "808444362999595058"
+  MM_ATTACHMENT_STORAGE_CHANNEL_ID: "808458625260847114"
   MM_URL: "https://modmail.ricing.net"
   MM_PREFIX: "."
   MM_SQLITE_OPTIONS__FILENAME: "/var/lib/modmailbot/data.sqlite"
   MM_LOG_OPTIONS__ATTACHMENT_DIRECTORY: "/var/lib/modmailbot/logs"
+  MM_STATUS: "DM to contact Staff"
+  MM_CLOSE_MESSAGE: "Modmail thread was closed by server staff."
 
 ---
 apiVersion: v1
@@ -65,3 +67,63 @@ spec:
         - name: bot-volume
           persistentVolumeClaim:
             claimName: bot-pv-claim
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: modmail
+  namespace: modmail
+  labels:
+    app: modmail
+spec:
+  selector:
+    app: bot
+  ports:
+    - protocol: TCP
+      name: web
+      port: 8890
+      targetPort: 8890
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cert
+  namespace: modmail
+spec:
+  secretName: cert-secret
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+  commonName: modmail.ricing.net
+  dnsNames:
+    - modmail.ricing.net
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: modmail
+  namespace: modmail
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+    traefik.ingress.kubernetes.io/preserve-host: "true"
+spec:
+  tls:
+    - hosts:
+      - modmail.ricing.net
+      secretName: cert-secret
+  rules:
+    - host: "modmail.ricing.net"
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: modmail
+                port:
+                  name: web
+
