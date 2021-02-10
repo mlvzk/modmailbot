@@ -16,6 +16,7 @@ data:
   MM_LOG_OPTIONS__ATTACHMENT_DIRECTORY: "/var/lib/modmailbot/logs"
   MM_STATUS: "DM to contact Staff"
   MM_CLOSE_MESSAGE: "Modmail thread was closed by server staff."
+  MM_ANONYMIZE_CHANNEL_NAME: "on"
 
 ---
 apiVersion: v1
